@@ -84,6 +84,12 @@ void DragdropwindowsPlugin::HandleMethodCall(
   } else if (method_call.method_name().compare("modifyWindowAcceptFiles") == 0) {
     HWND hWnd = GetRootWindow(registrar_->GetView());
     OleInitialize(NULL);
+
+    channel_ =
+          std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+              registrar_->messenger(), "dragdropwindows",
+              &flutter::StandardMethodCodec::GetInstance());
+
     if (pDropTarget) pDropTarget->Release();
     pDropTarget = CDropTarget::CreateInstance(std::move(channel_));
     if (pDropTarget) {
