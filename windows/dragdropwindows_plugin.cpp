@@ -199,6 +199,23 @@ CDropTarget::DragLeave()
     return S_OK;
 }
 
+std::string GBK_2_UTF8(std::string gbkStr)
+{
+    std::string outUtf8 = "";
+	int n = MultiByteToWideChar(CP_ACP, 0, gbkStr.c_str(), -1, NULL, 0);
+	WCHAR *str1 = new WCHAR[n];
+	MultiByteToWideChar(CP_ACP, 0, gbkStr.c_str(), -1, str1, n);
+	n = WideCharToMultiByte(CP_UTF8, 0, str1, -1, NULL, 0, NULL, NULL);
+	char *str2 = new char[n];
+	WideCharToMultiByte(CP_UTF8, 0, str1, -1, str2, n, NULL, NULL);
+	outUtf8 = str2;
+	delete[] str1;
+	str1 = NULL;
+	delete[] str2;
+	str2 = NULL;
+	return outUtf8;
+}
+
 HRESULT STDMETHODCALLTYPE
 CDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
@@ -250,7 +267,7 @@ CDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD 
             if (i > 0) strPaths << "|";
             strPaths << szName;
           }
-          m_channel->InvokeMethod("onDragDrop", std::make_unique<flutter::EncodableValue>(strPaths.str()));
+          m_channel->InvokeMethod("onDragDrop", std::make_unique<flutter::EncodableValue>(GBK_2_UTF8(strPaths.str())));
           DragFinish(hDrop);
         }
     }

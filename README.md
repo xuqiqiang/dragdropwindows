@@ -7,6 +7,11 @@ flutter gets the text or the file name from the callback function.
 - [x] Windows
 - [ ] Linux
 
+## Characteristic
+- Support drag and drop of multiple files
+- Support drag and drop of text
+- Support Chinese environment
+
 ## Usage
 ```dart
 import 'package:dragdropwindows/dragdropwindows.dart';
@@ -14,7 +19,6 @@ import 'package:dragdropwindows/dragdropwindows.dart';
 .
 .
 if (Platform.isWindows == true) {
-      // Platform messages may fail, so we use a try/catch PlatformException.
       try {
         DropfilesWindow.start((DropType type, List<String> results) {
           print("type=$type results=$results");
