@@ -216,13 +216,24 @@ std::string GBK_2_UTF8(std::string gbkStr)
 	return outUtf8;
 }
 
+std::string W_To_A(const std::wstring& wstr, unsigned int codepage = CP_ACP)
+{
+    int nwstrlen = WideCharToMultiByte(codepage, 0, wstr.c_str(), -1, NULL, 0, NULL, NULL);
+    if (nwstrlen > 0) {
+        std::string str(nwstrlen - 1, '\0');
+        WideCharToMultiByte(codepage, 0, wstr.c_str(), -1, (LPSTR)str.c_str(), nwstrlen, NULL, NULL);
+        return std::move(str);
+    }
+    return ("");
+}
+
 HRESULT STDMETHODCALLTYPE
 CDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
     // Incorporates the source data into the target window, removes target feedback, and releases the data object.
     // grfKeyState: MK_*
     // *pdwEffect: DROPEFFECT_*
-    ::OutputDebugString(TEXT("CDropTarget::Drop\n"));
+    //::OutputDebugString(TEXT("CDropTarget::Drop\n"));
     //::MessageBoxW(NULL, L"Dropped!", L"Dropped!", MB_ICONINFORMATION);
 
     FORMATETC fme;
@@ -269,6 +280,28 @@ CDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD 
           }
           m_channel->InvokeMethod("onDragDrop", std::make_unique<flutter::EncodableValue>(GBK_2_UTF8(strPaths.str())));
           DragFinish(hDrop);
+        }
+        else {
+
+            ZeroMemory(&fme, sizeof(fme));
+            fme.cfFormat = CF_UNICODETEXT;
+            fme.ptd = NULL;
+            fme.dwAspect = DVASPECT_CONTENT;
+            fme.lindex = -1;
+            fme.tymed = TYMED_HGLOBAL;
+
+            if (SUCCEEDED(pDataObject->GetData(&fme, &stgm)))
+            {
+                wchar_t* pSrcw = (wchar_t*)::GlobalLock(stgm.hGlobal);
+                std::ostringstream strText;
+                strText << "1";
+                if (pSrcw != NULL)
+                {
+                    strText << GBK_2_UTF8(W_To_A(pSrcw));
+                }
+                m_channel->InvokeMethod("onDragDrop",
+                    std::make_unique<flutter::EncodableValue>(strText.str()));
+            }
         }
     }
     return S_OK;
