@@ -1,5 +1,5 @@
 name: dragdropwindows
-description: A new Flutter project.
+description: A Flutter plugin modify windows style to accept Drag&Drop text or files.
 version: 0.0.3
 repository: https://github.com/xuqiqiang/dragdropwindows
 

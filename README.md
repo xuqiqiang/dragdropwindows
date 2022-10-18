@@ -1,5 +1,5 @@
 # dragdropwindows
-This plugin modify windows style to accep Drag&Drop text or files and when Drop text or files from other window, this plugin does call a dart callback function.
+This plugin modify windows style to accept Drag&Drop text or files and when Drop text or files from other window, this plugin does call a dart callback function.
 flutter gets the text or the file name from the callback function.
 
 ## Supported Platforms
@@ -18,12 +18,12 @@ import 'package:dragdropwindows/dragdropwindows.dart';
 .
 .
 .
-if (Platform.isWindows == true) {
+if (Platform.isWindows) {
       try {
         DropfilesWindow.start((DropType type, List<String> results) {
           print("type=$type results=$results");
           setState(() {
-            _dropInfo = '${type == DropType.text ? 'Drop text' : 'Drop files'} : ${results.toString()}';
+            _dropInfo = '${type == DropType.text ? 'Drop text' : 'Drop files'} : $results';
           });
         });
       } on PlatformException {
