@@ -227,6 +227,37 @@ std::string W_To_A(const std::wstring& wstr, unsigned int codepage = CP_ACP)
     return ("");
 }
 
+char* dup_wchar_to_utf8(wchar_t* w) {
+    size_t w_len = wcslen(w);
+    wchar_t* wstr = (wchar_t*)malloc((w_len + 1) * sizeof(wchar_t*));
+    // 去掉所有的'\r'
+    if (wstr) {
+        size_t j = 0;
+        for (size_t i = 0; i < w_len; i++) {
+            if (w[i] != '\r') {
+                wstr[j++] = w[i];
+            }
+        }
+        wstr[j] = '\0';
+    }
+    else {
+        wstr = w;
+    }
+
+    char* s = NULL;
+    int size = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, 0, 0, 0, 0);
+    s = (char*)malloc(size + 1);
+    if (s) {
+        WideCharToMultiByte(CP_UTF8, 0, wstr, -1, s, size, 0, 0);
+        s[size] = '\0';
+    }
+
+    if (wstr != w) {
+        free(wstr);
+    }
+    return s;
+}
+
 HRESULT STDMETHODCALLTYPE
 CDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
@@ -262,27 +293,25 @@ CDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD 
         fme.dwAspect = DVASPECT_CONTENT;
         fme.lindex = -1;
         fme.tymed = TYMED_HGLOBAL;
-
         if (SUCCEEDED(pDataObject->GetData(&fme, &stgm)))
         {
-          char szName[MAX_PATH];
           TCHAR wszName[MAX_PATH];
-          std::ostringstream strPaths;
+          std::wostringstream strPaths;
           HDROP hDrop = (HDROP)stgm.hGlobal;
           int count = DragQueryFile(hDrop, 0xFFFFFFFF, wszName, MAX_PATH);
-          strPaths << "2";
+          strPaths << L"2";
           for (int i = 0; i < count; i++)
           {
             DragQueryFile(hDrop, i, wszName, MAX_PATH);
-            WideCharToMultiByte(CP_ACP, 0, wszName, MAX_PATH, szName, MAX_PATH, NULL, NULL);
-            if (i > 0) strPaths << "|";
-            strPaths << szName;
+
+            if (i > 0) strPaths << L"|";
+            strPaths << wszName;
           }
-          m_channel->InvokeMethod("onDragDrop", std::make_unique<flutter::EncodableValue>(GBK_2_UTF8(strPaths.str())));
+          char* str = dup_wchar_to_utf8((wchar_t*)strPaths.str().c_str());
+          m_channel->InvokeMethod("onDragDrop", std::make_unique<flutter::EncodableValue>(std::string(str)));
           DragFinish(hDrop);
         }
         else {
-
             ZeroMemory(&fme, sizeof(fme));
             fme.cfFormat = CF_UNICODETEXT;
             fme.ptd = NULL;
@@ -293,14 +322,15 @@ CDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD 
             if (SUCCEEDED(pDataObject->GetData(&fme, &stgm)))
             {
                 wchar_t* pSrcw = (wchar_t*)::GlobalLock(stgm.hGlobal);
-                std::ostringstream strText;
-                strText << "1";
+                std::wostringstream strText;
+                strText << L"1";
                 if (pSrcw != NULL)
                 {
-                    strText << GBK_2_UTF8(W_To_A(pSrcw));
+                    strText << pSrcw;
                 }
+                char* str = dup_wchar_to_utf8((wchar_t*)strText.str().c_str());
                 m_channel->InvokeMethod("onDragDrop",
-                    std::make_unique<flutter::EncodableValue>(strText.str()));
+                    std::make_unique<flutter::EncodableValue>(std::string(str)));
             }
         }
     }
